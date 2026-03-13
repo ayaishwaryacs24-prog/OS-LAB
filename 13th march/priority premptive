@@ -1,0 +1,77 @@
+#include <stdio.h>
+#include <limits.h>
+
+struct Process {
+    int id, at, bt, remaining_bt, priority, ct, tat, wt, rt, start_time;
+};
+
+int main() {
+    int n;
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+    struct Process p[n];
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        printf("P%d - AT, BT, Priority: ", i + 1);
+        scanf("%d %d %d", &p[i].at, &p[i].bt, &p[i].priority);
+        p[i].remaining_bt = p[i].bt;
+        p[i].start_time = -1;
+    }
+
+    int completed = 0, cur_time = 0, prev = -1;
+    int gantt_p[200], gantt_t[200], g_idx = 0;
+    float t_ct=0, t_tat=0, t_wt=0, t_rt=0;
+
+    while (completed != n) {
+        int idx = -1, min_prio = INT_MAX;
+        for (int i = 0; i < n; i++) {
+            if (p[i].at <= cur_time && p[i].remaining_bt > 0) {
+                if (p[i].priority < min_prio) { min_prio = p[i].priority; idx = i; }
+                if (p[i].priority == min_prio && p[i].at < p[idx].at) idx = i;
+            }
+        }
+
+        if (idx != -1) {
+            if (p[idx].start_time == -1) {
+                p[idx].start_time = cur_time;
+                p[idx].rt = p[idx].start_time - p[idx].at;
+            }
+            if (prev != idx) {
+                gantt_p[g_idx] = p[idx].id;
+                gantt_t[g_idx++] = cur_time;
+            }
+            p[idx].remaining_bt--;
+            cur_time++;
+            prev = idx;
+            if (p[idx].remaining_bt == 0) {
+                p[idx].ct = cur_time;
+                p[idx].tat = p[idx].ct - p[idx].at;
+                p[idx].wt = p[idx].tat - p[idx].bt;
+                t_ct += p[idx].ct; t_tat += p[idx].tat;
+                t_wt += p[idx].wt; t_rt += p[idx].rt;
+                completed++;
+            }
+        } else {
+            cur_time++;
+        }
+    }
+    gantt_t[g_idx] = cur_time;
+
+    // Table Display
+    printf("\nID\tAT\tBT\tPrio\tCT\tTAT\tWT\tRT\n");
+    for(int i=0; i<n; i++)
+        printf("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n", p[i].id, p[i].at, p[i].bt, p[i].priority, p[i].ct, p[i].tat, p[i].wt, p[i].rt);
+
+    // Boxed Gantt Chart
+    printf("\nGantt Chart:\n");
+    for(int i=0; i<g_idx; i++) printf("+-----");
+    printf("+\n");
+    for(int i=0; i<g_idx; i++) printf("| P%-2d ", gantt_p[i]);
+    printf("|\n");
+    for(int i=0; i<g_idx; i++) printf("+-----");
+    printf("+\n");
+    for(int i=0; i<=g_idx; i++) printf("%-6d", gantt_t[i]);
+
+    printf("\n\nAvg CT: %.2f | Avg TAT: %.2f | Avg WT: %.2f | Avg RT: %.2f\n", t_ct/n, t_tat/n, t_wt/n, t_rt/n);
+    return 0;
+}
