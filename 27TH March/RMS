@@ -1,0 +1,88 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+int gcd(int a, int b) 
+{
+    if (b == 0) return a;
+    return gcd(b, a % b);
+}
+
+int lcm(int a, int b) 
+{
+    return (a * b) / gcd(a, b);
+}
+
+int main() 
+{
+    int n;
+    printf("Enter the number of processes: ");
+    scanf("%d", &n);
+
+    int burst[10], period[10], remaining[10];
+
+    printf("Enter the CPU burst times:\n");
+    for (int i = 0; i < n; i++) 
+        scanf("%d", &burst[i]);
+
+    printf("Enter the time periods:\n");
+    for (int i = 0; i < n; i++) 
+    {
+        scanf("%d", &period[i]);
+        remaining[i] = 0;
+    }
+
+    int hyperperiod = period[0];
+    for (int i = 1; i < n; i++) 
+        hyperperiod = lcm(hyperperiod, period[i]);
+    
+    printf("\nLCM = %d\n", hyperperiod);
+    printf("Rate Monotone Scheduling:\n");
+    printf("PID\tBurst\tPeriod\n");
+    for (int i = 0; i < n; i++) 
+        printf("%d\t%d\t%d\n", i + 1, burst[i], period[i]);
+
+    double utilization = 0.0;
+    for (int i = 0; i < n; i++) 
+        utilization += (double)burst[i] / period[i];
+    double bound = n * (pow(2.0, 1.0 / n) - 1.0);
+
+
+    printf("%f <= %f => %s\n", utilization, bound, utilization <= bound ? "true" : "false");
+    printf("Scheduling occurs for %d ms\n", hyperperiod);
+
+    int current_task = -2;
+
+    for (int t = 0; t < hyperperiod; t++) 
+    {
+
+        for (int i = 0; i < n; i++)
+        {
+            if (t % period[i] == 0) 
+                remaining[i] = burst[i];
+        }
+
+        int highest_priority_task = -1;
+        int min_period = 999999;
+
+        for (int i = 0; i < n; i++) 
+        {
+            if (remaining[i] > 0 && period[i] < min_period) 
+            {
+                min_period = period[i];
+                highest_priority_task = i;
+            }
+        }
+        if (highest_priority_task != current_task) 
+        {
+            if (highest_priority_task == -1) 
+                printf("%dms onwards: CPU is idle\n", t);
+            else 
+                printf("%dms onwards: Process %d running\n", t, highest_priority_task + 1);
+            current_task = highest_priority_task;
+        }
+        if (current_task != -1)
+            remaining[current_task]--;
+    }
+
+    return 0;
+}
