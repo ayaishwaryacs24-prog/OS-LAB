@@ -1,0 +1,84 @@
+#include <stdio.h>
+
+#define INFINITY 9999
+
+typedef struct {
+    int pid;
+    int burst;
+    int deadline;
+    int period;
+    int remaining;
+    int abs_deadline;
+    int next_arrival;
+} Process;
+
+int main() {
+    int n, total_time;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &n);
+
+    Process p[n];
+
+    for (int i = 0; i < n; i++) {
+        p[i].pid = i + 1;
+        printf("Process %d - Enter Burst, Deadline, Period: ", p[i].pid);
+        scanf("%d %d %d", &p[i].burst, &p[i].deadline, &p[i].period);
+
+        p[i].remaining = 0;
+        p[i].next_arrival = 0;
+    }
+
+    printf("Enter total scheduling time (in ms): ");
+    scanf("%d", &total_time);
+
+    for (int i = 0; i < n - 1; i++) {
+        for (int j = 0; j < n - i - 1; j++) {
+            if (p[j].deadline > p[j + 1].deadline) {
+                Process temp = p[j];
+                p[j] = p[j + 1];
+                p[j + 1] = temp;
+            }
+        }
+    }
+
+    printf("\nPID\tBurst\tDeadline\tPeriod\n");
+
+    for (int i = 0; i < n; i++) {
+        printf("%d\t%d\t%d\t\t%d\n", p[i].pid, p[i].burst, p[i].deadline, p[i].period);
+    }
+
+    printf("\nScheduling occurs for %d ms\n", total_time);
+
+    for (int time = 0; time < total_time; time++) {
+
+        for (int i = 0; i < n; i++) {
+            if (time == p[i].next_arrival) {
+                p[i].remaining = p[i].burst;
+                p[i].abs_deadline = time + p[i].deadline;
+                p[i].next_arrival += p[i].period;
+            }
+        }
+
+        int min_deadline = INFINITY;
+        int selected = -1;
+
+        for (int i = 0; i < n; i++) {
+            if (p[i].remaining > 0) {
+                if (p[i].abs_deadline < min_deadline) {
+                    min_deadline = p[i].abs_deadline;
+                    selected = i;
+                }
+            }
+        }
+
+        if (selected == -1) {
+            printf("%dms: CPU is idle.\n", time);
+        } else {
+            printf("%dms: Task %d is running.\n", time, p[selected].pid);
+            p[selected].remaining--;
+        }
+    }
+
+    return 0;
+}
